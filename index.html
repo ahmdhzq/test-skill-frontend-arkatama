@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Testimoni Arkatama Multi Solusindo</title>
+  <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.6/quill.snow.css">
+  <link rel="stylesheet" href="style.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+  <style>
+    .card {
+      box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+      transition: 0.3s;
+    }
+
+    /* On mouse-over, add a deeper shadow */
+    .card:hover {
+      box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+    }
+
+    .card-body {
+      padding: 2px 16px;
+    }
+
+    .img-profil {
+      width: 8rem;
+      height: 8rem;
+      padding: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Form untuk menambahkan testimoni baru -->
+  <div class="container mt-3">
+    <h1 class="text-center">Testimoni</h1>
+    <form id="addTestimonialForm">
+      <div class="form-group">
+        <div class="col">
+          <label for="name">Nama:</label>
+          <input type="text" class="form-control" id="name" name="name" required minlength="3" maxlength="100"
+            pattern="[A-Za-z\s'-]+">
+        </div>
+
+        <div class="col">
+          <label for="email">Email:</label>
+          <input type="email" class="form-control" id="email" name="email" required minlength="3" maxlength="100">
+        </div>
+
+        <div class="col">
+          <label for="asalInstansi">Asal Instansi:</label>
+          <input type="text" class="form-control" id="asalInstansi" name="asalInstansi" required minlength="3"
+            maxlength="100" pattern="[A-Za-z\s'-]+">
+        </div>
+
+        <div class="col">
+          <label for="photo">Foto:</label>
+          <input type="url" class="form-control" id="photo" name="photo" required>
+        </div>
+
+
+        <div class="col">
+          <label for="testimonial">Testimoni:</label>
+          <div id="editor"></div>
+        </div>
+
+        <button type="submit" class="btn btn-primary m-2">Submit</button>
+      </div>
+    </form>
+
+    <!-- Form untuk mengupdate data testimoni -->
+    <form id="updateTestimonialForm" style="display: none;">
+      <label for="updateName">Nama:</label>
+      <input type="text" id="updateName" name="name" required minlength="3" maxlength="100" pattern="[a-zA-Z\s'-]+">
+
+      <label for="updateEmail">Email:</label>
+      <input type="email" id="updateEmail" name="email" required minlength="3" maxlength="100">
+
+      <label for="updateInstitution">Asal Instansi:</label>
+      <input type="text" id="updateInstansi" name="asalInstansi" required minlength="3" maxlength="100"
+        pattern="[a-zA-Z\s'-]+">
+
+      <label for="updateTestimonial">Testimoni:</label>
+      <div id="updateTestimonialEditor"></div>
+
+      <label for="updatePhoto">Foto (URL):</label>
+      <input type="url" id="updatePhoto" name="photo" required>
+
+      <button type="submit">Update Testimoni</button>
+    </form>
+  </div>
+
+  <!-- Daftar testimoni yang sudah ada -->
+  <h2 class="text-center">Daftar Testimoni</h2>
+  <div class="container">
+    <div class="row m-3" id="testimonialList"></div>
+  </div>
+
+  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous">
+  </script>
+  <script>
+    // Inisialisasi Quill editor
+    var quill = new Quill('#editor', {
+      theme: 'snow',
+      placeholder: 'Tulis testimoni di sini'
+    });
+
+    // Fungsi untuk menambahkan testimoni baru menggunakan API
+    function addTestimonial(event) {
+      event.preventDefault();
+
+      const form = document.getElementById('addTestimonialForm');
+      const name = form.elements.name.value;
+      const email = form.elements.email.value;
+      const asalInstansi = form.elements.asalInstansi.value;
+      const testimonial = quill.root.innerHTML;
+      const photo = form.elements.photo.value;
+
+      const testimonialData = {
+        name: name,
+        email: email,
+        asal_instansi: asalInstansi,
+        testimonial: testimonial,
+        foto: photo
+      };
+
+      fetch('https://647ed259c246f166da8f6b62.mockapi.io/testimoni', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(testimonialData)
+        })
+        .then(response => response.json())
+        .then(() => {
+          form.reset(); // Mengosongkan form setelah testimoni ditambahkan
+          quill.setText(''); // Mengosongkan konten editor Quill
+          getTestimonials(); // Memperbarui daftar testimoni setelah penambahan
+        });
+    }
+
+    // Fungsi untuk memperoleh daftar testimoni dari API
+    function getTestimonials() {
+      fetch('https://647ed259c246f166da8f6b62.mockapi.io/testimoni')
+        .then(response => response.json())
+        .then(testimonials => {
+          const testimonialList = document.getElementById('testimonialList');
+          testimonialList.innerHTML = '';
+
+          testimonials.forEach(testimonial => {
+            const listItem = document.createElement('div');
+            listItem.innerHTML = `
+              <div class="card" style="width:8rem;">
+                <img class="img-profil" src="${testimonial.photo}" alt="Foto Pengguna">
+              </div>
+              <div class="card-body">
+                <h4>${testimonial.name}</h4>
+                <p>${testimonial.testimonial}</p>
+              </div>
+            `;
+            testimonialList.appendChild(listItem);
+          });
+        });
+    }
+
+    // Fungsi untuk melakukan update data testimoni menggunakan API
+    function updateTestimonial(testimonialId) {
+      const form = document.getElementById('updateTestimonialForm');
+      const name = form.elements.updateName.value;
+      const email = form.elements.updateEmail.value;
+      const asalInstansi = form.elements.updateInstansi.value;
+      const testimonial = quill.root.innerHTML;
+      const photo = form.elements.updatePhoto.value;
+
+      const testimonialData = {
+        name: name,
+        email: email,
+        asal_instansi: asalInstansi,
+        testimonial: testimonial,
+        foto: photo
+      };
+
+      fetch(`https://647ed259c246f166da8f6b62.mockapi.io/testimoni/${testimonialId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(testimonialData)
+        })
+        .then(response => response.json())
+        .then(() => {
+          form.reset(); // Mengosongkan form setelah update
+          quill.setText(''); // Mengosongkan konten editor Quill
+          getTestimonials(); // Memperbarui daftar testimoni setelah update
+        });
+    }
+
+
+
+    // Memuat daftar testimoni saat halaman pertama kali dibuka
+    document.addEventListener('DOMContentLoaded', () => {
+      getTestimonials();
+    });
+
+    // Menghubungkan form dengan fungsi addTestimonial
+    const addTestimonialForm = document.getElementById('addTestimonialForm');
+    addTestimonialForm.addEventListener('submit', addTestimonial);
+  </script>
+</body>
+
+</html>
